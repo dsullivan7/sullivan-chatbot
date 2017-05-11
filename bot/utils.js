@@ -30,9 +30,9 @@ export const getSummary = (user) => {
 /**
  * get text to send in an message subject
  */
-export const getSubject = user => `Nutrition Chatbot Summary For: ${user.userId}`
+export const getSubject = user => `Sullivan Chatbot Summary For: ${user.userId}`
 
 /**
  * get text to send in an message subject
  */
-export const getEmailTo = () => 'dbsullivan23@gmail.com, joshuadylancurry@gmail.com, james@thebodyconsultants.com'
+export const getEmailTo = () => 'dbsullivan23@gmail.com'
