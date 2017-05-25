@@ -101,7 +101,7 @@ const nextState = user => flow.states[user.currentState].next(user)
  * returns the state that this answer matches with
  * @param { String } response - the response of the user
  */
-const stateMatch = response => Object.keys(flow.states).first(state => response.startsWith(state))
+const stateMatch = response => Object.keys(flow.states).find(state => response.startsWith(state))
 
 /**
  * Processing the message ending
