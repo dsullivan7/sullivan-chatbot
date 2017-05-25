@@ -93,8 +93,15 @@ app.get('/webhook', (req, res) => {
 
 /**
  * return the next state according to the response
+ * @param { Object } user - the user object used to retrieve the next state
  */
 const nextState = user => flow.states[user.currentState].next(user)
+
+/**
+ * returns the state that this answer matches with
+ * @param { String } response - the response of the user
+ */
+const stateMatch = response => Object.keys(flow.states).first(state => response.startsWith(state))
 
 /**
  * Processing the message ending
@@ -190,6 +197,13 @@ const processResponse = (pageId, user, userResponse) => {
     }
   }
 
+  // ensure that the response matches the current state
+  // if not, reset the state
+  const match = stateMatch(userResponse)
+  if (match) {
+    user.setCurrentState(match)
+  }
+
   // the response has no errors, save it
   user.saveResponse(user.currentState, userResponse)
   user.setCurrentState(nextState(user))
@@ -247,6 +261,9 @@ const processUserMessage = (pageId, senderId, userMessage) => {
 
 /**
  * called when message is a formatted postback
+ *
+ * @param {String} pageId - the id of the page that this request came from
+ * @param {Object} event - the event object that was sent
  */
 const receivedPostback = (pageId, event) => {
   const senderId = event.sender.id;
