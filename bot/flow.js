@@ -48,7 +48,7 @@ const flow = {
     },
     [states.CLOSING]: {
       messageType: 'text',
-      message: () => 'Alrighty, we\'ll forward your info the the right person. Thanks very much for getting in touch with us. Have a great day and we’ll be in touch shortly!',
+      message: () => 'Alrighty, we\'ll forward your info to the right person. Thanks very much for getting in touch with us. Have a great day and we’ll be in touch shortly!',
       next: () => null,
       end: true,
     },
