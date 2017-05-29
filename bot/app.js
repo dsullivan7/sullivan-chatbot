@@ -132,7 +132,7 @@ const messageChain = (pageId, user, userResponse) => {
   const nextMessages = bot.nextMessages(user, userResponse)
   let promiseChain = Promise.resolve()
   nextMessages.forEach((message) => {
-    promiseChain = messageChain.then(() => sendBotMessage(pageId, user.userId, message))
+    promiseChain = promiseChain.then(() => sendBotMessage(pageId, user.userId, message))
   })
 
   return promiseChain
