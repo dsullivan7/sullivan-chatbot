@@ -130,8 +130,6 @@ const checkEnd = (pageId, user) => {
  */
 const messageChain = (pageId, user, userResponse) => {
   const nextMessages = bot.nextMessages(user, userResponse)
-  console.log('nextMessages')
-  console.log(nextMessages)
   let promiseChain = Promise.resolve()
   nextMessages.forEach((message) => {
     promiseChain = promiseChain.then(() => sendBotMessage(pageId, user.userId, message))

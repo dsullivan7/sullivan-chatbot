@@ -1,8 +1,6 @@
 import * as states from './states'
 
-const offscript = user => {
-  return !user.responses[user.currentState].startsWith(user.currentState)
-}
+const offscript = user => !user.responses[user.currentState].startsWith(user.currentState)
 
 // flow object represents the flow through a conversation
 const flow = {
@@ -13,8 +11,10 @@ const flow = {
     },
     [states.GREETING]: {
       next: () => states.QUICK_REPLY_DEMO,
-      messageType: 'text',
-      message: user => `Hey there ${user.profile.first_name}! Thanks for the message!`,
+      message: user => ({
+        type: 'text',
+        text: `Hey there ${user.profile.first_name}! Thanks for the message!`,
+      }),
       noReply: true,
     },
     [states.QUICK_REPLY_DEMO]: {
