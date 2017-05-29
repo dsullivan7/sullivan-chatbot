@@ -172,8 +172,6 @@ const processUserMessage = (pageId, senderId, userMessage) => {
   }
 
   if (userPromise) {
-    console.log('userMessage')
-    console.log(userMessage)
     const processPromise = userPromise.then(user => bot.processResponse(user, userMessage))
     const conversationPromise = Promise.all([userPromise, processPromise])
       .then(values => messageChain(pageId, values[0], userMessage))

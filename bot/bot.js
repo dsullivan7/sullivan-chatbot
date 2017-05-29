@@ -74,8 +74,6 @@ const nextMessages = (user, userMessage) => {
 
   // create messages until we encounter a message that needs a reply
   while (true) {
-    console.log('currentState')
-    console.log(user.currentState)
     const message = flow.states[user.currentState].message(user)
     messages.push(message)
 
