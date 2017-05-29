@@ -12,15 +12,15 @@ export const getSummary = (user) => {
 
   Object.keys(user.responses).forEach((state) => {
     if (flow.states[state].message) {
-      const question = flow.states[state].message(user.profile)
+      const message = flow.states[state].message(user)
 
       // if the flow has an answers function, and the response is defined for that answer,
       // store that as the answer
       // otherwise, just store whatever the user responded with
-      const answer = (flow.states[state].answers &&
-        flow.states[state].answers()[user.responses[state]]) || user.responses[state]
+      const answer = (message.answers &&
+        message[user.responses[state]]) || user.responses[state]
 
-      email += `\n${question}\n${answer}\n`
+      email += `\n${message.text}\n${answer}\n`
     }
   })
 
