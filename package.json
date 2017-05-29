@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "babel-node index.js",
-    "test": "mocha --require babel-register bot/**/*.tests.js"
+    "test": "mocha --require babel-register bot/**/*.tests.js",
+    "test-file": "mocha --require babel-register"
   },
   "repository": {
     "type": "git",

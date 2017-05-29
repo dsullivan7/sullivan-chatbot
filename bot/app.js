@@ -2,7 +2,8 @@ import bodyParser from 'body-parser'
 import crypto from 'crypto'
 import express from 'express'
 
-import flow from './flow'
+import bot from './bot'
+import User from './user'
 import * as utils from './utils'
 import * as email from './email'
 
@@ -15,23 +16,6 @@ import { sendTextMessage, sendPostback, sendQuickReply } from './messages'
 
 // users stores all user information, should be stored in a database
 const users = {}
-
-class User {
-  constructor() {
-    this.userId = null
-    this.profile = null
-    this.currentState = null
-    this.responses = {}
-  }
-
-  saveResponse(state, response) {
-    this.responses[state] = response
-  }
-
-  setCurrentState(state) {
-    this.currentState = state
-  }
-}
 
 if (!(configuration.APP_SECRET &&
       configuration.VALIDATION_TOKEN &&
@@ -92,23 +76,11 @@ app.get('/webhook', (req, res) => {
 })
 
 /**
- * return the next state according to the response
- * @param { Object } user - the user object used to retrieve the next state
- */
-const nextState = user => flow.states[user.currentState].next(user)
-
-/**
- * returns the state that this answer matches with
- * @param { String } response - the response of the user
- */
-const stateMatch = response => Object.keys(flow.states).find(state => response.startsWith(state))
-
-/**
  * Processing the message ending
  * @param  {String} pageId - the id of the page
  * @param  {String} senderId - the id of the sender
  */
-const conversationEnd = (pageId, user) => {
+const handleConversationEnd = (pageId, user) => {
   // we're in the closing state, send an email
   console.log('closing state!')
   const emailText = utils.getSummary(user)
@@ -116,9 +88,6 @@ const conversationEnd = (pageId, user) => {
   const emailTo = utils.getEmailTo(user)
 
   email.sendMail(emailText, emailSubject, emailTo)
-
-  // unset the state
-  user.setCurrentState(null)
 }
 
 /**
@@ -127,24 +96,15 @@ const conversationEnd = (pageId, user) => {
  * @param  {String} senderId - the id of the sender
  * @return {Object} - the promise object
  */
-const sendBotMessage = (pageId, senderId, profile, state) => {
-  let message
-  let answers
-  console.log('currentState')
-  console.log(state)
-  switch (flow.states[state].messageType) {
+const sendBotMessage = (pageId, senderId, message) => {
+  switch (message.type) {
     case 'text':
       console.log('text message being sent')
-      message = flow.states[state].message(profile)
-      return sendTextMessage(pageId, senderId, message)
+      return sendTextMessage(pageId, senderId, message.text)
     case 'postback':
-      message = flow.states[state].message(profile)
-      answers = flow.states[state].answers()
-      return sendPostback(pageId, senderId, message, answers)
+      return sendPostback(pageId, senderId, message.text, message.answers)
     case 'quickReply':
-      message = flow.states[state].message(profile)
-      answers = flow.states[state].answers()
-      return sendQuickReply(pageId, senderId, message, answers)
+      return sendQuickReply(pageId, senderId, message.text, message.answers)
     default:
       console.log('messageType not recognized')
   }
@@ -155,8 +115,8 @@ const sendBotMessage = (pageId, senderId, profile, state) => {
 
 
 const checkEnd = (pageId, user) => {
-  if (flow.states[user.currentState].end) {
-    conversationEnd(pageId, user)
+  if (bot.isConversationEnd(user)) {
+    handleConversationEnd(pageId, user)
   }
 
   return Promise.resolve()
@@ -169,47 +129,13 @@ const checkEnd = (pageId, user) => {
  * @param  {Text} userResponse - what the user responded with
  */
 const messageChain = (pageId, user, userResponse) => {
-  const state = user.currentState
-  const senderId = user.userId
-  const profile = user.profile
+  const nextMessages = bot.nextMessages(user, userResponse)
+  let promiseChain = Promise.resolve()
+  nextMessages.forEach((message) => {
+    promiseChain = messageChain.then(() => sendBotMessage(pageId, user.userId, message))
+  })
 
-  return sendBotMessage(pageId, senderId, profile, state).then(
-    () => {
-      if (flow.states[state].noReply) {
-        // there is no need to wait for a response
-        // proceed to the next state
-        user.setCurrentState(nextState(user))
-        return messageChain(pageId, user, userResponse)
-      }
-
-      // wait for reply
-      return Promise.resolve()
-    })
-}
-
-const processResponse = (pageId, user, userResponse) => {
-  // check to see if this response is a valid one
-  if (flow.states[user.currentState].validation) {
-    const invalidMessage = flow.states[user.currentState].validation(userResponse)
-    if (invalidMessage) {
-      // this is an invalid response, send it to the user
-      return sendTextMessage(pageId, user.userId, invalidMessage)
-    }
-  }
-
-  // ensure that the response matches the current state
-  // if not, reset the state
-  const match = stateMatch(userResponse)
-  if (match) {
-    user.setCurrentState(match)
-  }
-
-  // the response has no errors, save it
-  user.saveResponse(user.currentState, userResponse)
-  user.setCurrentState(nextState(user))
-
-  // no validation function to use
-  return Promise.resolve()
+  return promiseChain
 }
 
 /**
@@ -227,14 +153,13 @@ const processUserMessage = (pageId, senderId, userMessage) => {
   let userPromise
 
   // check to see if we have a Get Started message for this user
-  if (userMessage === 'GET_STARTED' ||
-      userMessage === 'Get Started') {
+  if (bot.isConversationStart(userMessage)) {
     userPromise = getUserInfo(pageId, accessToken, senderId)
       .then((userInfo) => {
         const user = new User()
         user.userId = senderId
         user.profile = userInfo
-        user.currentState = flow.initialState
+        user.currentState = bot.getInitialState()
         user.responses = {}
 
         users[senderId] = user
@@ -247,8 +172,8 @@ const processUserMessage = (pageId, senderId, userMessage) => {
   }
 
   if (userPromise) {
-    const savePromise = userPromise.then(user => processResponse(pageId, user, userMessage))
-    const conversationPromise = Promise.all([userPromise, savePromise])
+    const processPromise = userPromise.then(user => bot.processResponse(user, userMessage))
+    const conversationPromise = Promise.all([userPromise, processPromise])
       .then(values => messageChain(pageId, values[0], userMessage))
     const endPromise = Promise.all([userPromise, conversationPromise])
       .then(values => checkEnd(pageId, values[0]))
