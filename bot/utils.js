@@ -18,7 +18,7 @@ export const getSummary = (user) => {
       // store that as the answer
       // otherwise, just store whatever the user responded with
       const answer = (message.answers &&
-        message[user.responses[state]]) || user.responses[state]
+        message.answers[user.responses[state]]) || user.responses[state]
 
       email += `\n${message.text}\n${answer}\n`
     }
