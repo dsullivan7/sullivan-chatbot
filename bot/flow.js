@@ -1,6 +1,8 @@
 import * as states from './states'
 
-const offscript = user => !user.responses[user.currentState].startsWith(user.currentState)
+const offscript = user => {
+  return !user.responses[user.currentState].startsWith(user.currentState)
+}
 
 // flow object represents the flow through a conversation
 const flow = {

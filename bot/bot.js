@@ -73,15 +73,18 @@ const nextMessages = (user, userMessage) => {
   const messages = []
 
   // create messages until we encounter a message that needs a reply
-  let noReply
-  do {
+  while (true) {
     console.log('currentState')
     console.log(user.currentState)
     const message = flow.states[user.currentState].message(user)
     messages.push(message)
-    noReply = flow.states[user.currentState].noReply
-    user.setCurrentState(nextState(user))
-  } while (noReply)
+
+    if (flow.states[user.currentState].noReply) {
+      user.setCurrentState(nextState(user))
+    } else {
+      break
+    }
+  }
 
   return messages
 }
