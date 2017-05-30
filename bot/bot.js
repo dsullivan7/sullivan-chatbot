@@ -87,10 +87,36 @@ const nextMessages = (user, userMessage) => {
   return messages
 }
 
+/**
+ * return a summary object for the user
+ * @param  {User} user - the user object
+ * @return {Object} - a summary for the user
+ */
+const getSummary = (user) => {
+  const summary = {}
+  summary.userId = user.userId
+  summary.profile = user.profile
+
+  const answers = []
+  Object.keys(user.responses).forEach((state) => {
+    if (flow.states[state].message) {
+      const message = flow.states[state].message(user)
+
+      // if the flow has an answers function, and the response is defined for that answer,
+      // store that as the answer
+      // otherwise, just store whatever the user responded with
+      const answer = (message.answers &&
+        message.answers[user.responses[state]]) || user.responses[state]
+      answers.push({ text: message.text, answer })
+    }
+  })
+}
+
 module.exports = {
   isConversationStart,
   isConversationEnd,
   getInitialState,
+  getSummary,
   processResponse,
   nextMessages,
   stateMatch,
