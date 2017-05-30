@@ -110,6 +110,8 @@ const getSummary = (user) => {
       answers.push({ text: message.text, answer })
     }
   })
+
+  return summary
 }
 
 module.exports = {
