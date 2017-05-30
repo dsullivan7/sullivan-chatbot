@@ -97,7 +97,7 @@ const getSummary = (user) => {
   summary.userId = user.userId
   summary.profile = user.profile
 
-  const answers = []
+  const responses = []
   Object.keys(user.responses).forEach((state) => {
     if (flow.states[state].message) {
       const message = flow.states[state].message(user)
@@ -107,9 +107,11 @@ const getSummary = (user) => {
       // otherwise, just store whatever the user responded with
       const answer = (message.answers &&
         message.answers[user.responses[state]]) || user.responses[state]
-      answers.push({ text: message.text, answer })
+      responses.push({ text: message.text, answer })
     }
   })
+
+  summary.responses = responses
 
   return summary
 }
