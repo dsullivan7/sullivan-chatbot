@@ -195,6 +195,8 @@ const receivedPostback = (pageId, event) => {
   const senderId = event.sender.id;
   console.log('senderId')
   console.log(senderId)
+  console.log('postback')
+  console.log(event.postback)
 
   const messageText = event.postback.payload
 
