@@ -236,8 +236,6 @@ const handleError = (err) => {
  */
 app.post('/webhook', (req, res) => {
   const data = req.body
-  console.log('request received!')
-  console.log(req)
 
   // Make sure this is a page subscription
   if (data.object === 'page') {
