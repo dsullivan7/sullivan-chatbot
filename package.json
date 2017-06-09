@@ -20,7 +20,7 @@
     "babel-register": "^6.24.0",
     "bluebird": "^3.5.0",
     "body-parser": "^1.15.0",
-    "chatbot-flow": "./chatbot-flow-0.0.1.tgz",
+    "chatbot-flow": "./chatbot-flow-0.0.2.tgz",
     "config": "^1.20.4",
     "ejs": "^2.4.2",
     "express": "^4.13.4",
