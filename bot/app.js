@@ -7,6 +7,7 @@ import * as configuration from './configuration'
 import * as utils from './utils'
 import * as email from './email'
 import User from './user'
+import userStore from './userStore'
 
 import { getUserInfo } from './facebookApiClient'
 import { sendTextMessage, sendPostback, sendQuickReply } from './messages'
@@ -16,9 +17,6 @@ import config from './flow'
 // import db from './database'
 
 const flow = new Flow(config)
-
-// users stores all user information, should be stored in a database
-const users = {}
 
 if (!(configuration.APP_SECRET &&
       configuration.VALIDATION_TOKEN &&
@@ -148,25 +146,25 @@ const messageChain = (pageId, senderId, messages) => {
  * @param  {Ojbect} messageData - and object with user message information
  */
 const processUserMessage = (pageId, senderId, messageData) => {
-  if (users[senderId]) {
+  if (userStore[senderId]) {
     console.log('current state')
-    console.log(users[senderId].currentState)
+    console.log(userStore[senderId].currentState)
   }
   const accessToken = configuration.PAGE_ACCESS_TOKENS[pageId]
   let userPromise
 
-  if (!users[senderId]) {
+  if (!userStore[senderId]) {
     userPromise = getUserInfo(pageId, accessToken, senderId).then((userInfo) => {
       const user = new User()
       user.userId = senderId
       user.profile = userInfo
 
-      users[senderId] = user
+      userStore[senderId] = user
 
       return user
     })
   } else {
-    userPromise = Promise.resolve(users[senderId])
+    userPromise = Promise.resolve(userStore[senderId])
   }
 
   return userPromise

@@ -1,4 +1,5 @@
 import * as states from './states'
+import userStore from './userStore'
 
 const offscript = user => (user.responses[user.currentState].payload &&
                            !user.responses[user.currentState].payload.startsWith(user.currentState))
@@ -14,7 +15,7 @@ const flow = {
       next: () => states.QUICK_REPLY_DEMO,
       message: user => ({
         type: 'text',
-        text: `Hey there ${user.profile.first_name}! Thanks for the message!`,
+        text: `Hey there ${userStore[user.sessionId].profile.first_name}! Thanks for the message!`,
       }),
       noReply: true,
     },
