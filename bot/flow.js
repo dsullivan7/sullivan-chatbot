@@ -62,6 +62,7 @@ const flow = {
         type: 'text',
         text: 'Alrighty, we\'ll forward your info to the right person. Thanks very much for getting in touch with us. Have a great day and we’ll be in touch shortly!',
       }),
+      noReply: true,
       next: () => null,
     },
   },
