@@ -1,6 +1,7 @@
 import * as states from './states'
 
-const offscript = user => !user.responses[user.currentState].startsWith(user.currentState)
+const offscript = user => (user.responses[user.currentState].payload &&
+                           !user.responses[user.currentState].payload.startsWith(user.currentState))
 
 // flow object represents the flow through a conversation
 const flow = {
@@ -47,7 +48,6 @@ const flow = {
         type: 'text',
         text: 'No problem, we\'ll have someone reach out to you shortly',
       }),
-      end: true,
     },
     [states.QUESTION]: {
       next: () => states.CLOSING,
@@ -62,7 +62,6 @@ const flow = {
         text: 'Alrighty, we\'ll forward your info to the right person. Thanks very much for getting in touch with us. Have a great day and we’ll be in touch shortly!',
       }),
       next: () => null,
-      end: true,
     },
   },
 }

@@ -1,18 +1,21 @@
 import bodyParser from 'body-parser'
 import crypto from 'crypto'
 import express from 'express'
-
-import bot from './bot'
-import User from './user'
-import * as utils from './utils'
-import * as email from './email'
+import {Flow} from 'chatbot-flow'
 
 import * as configuration from './configuration'
+import * as utils from './utils'
+import * as email from './email'
+import User from './user'
 
 import { getUserInfo } from './facebookApiClient'
 import { sendTextMessage, sendPostback, sendQuickReply } from './messages'
 
+import config from './flow'
+
 // import db from './database'
+
+const flow = new Flow(config)
 
 // users stores all user information, should be stored in a database
 const users = {}
@@ -77,18 +80,18 @@ app.get('/webhook', (req, res) => {
 
 /**
  * Processing the message ending
- * @param  {String} pageId - the id of the page
- * @param  {String} senderId - the id of the sender
+ * @param  {String} user - the user object
  */
-const handleConversationEnd = (pageId, user) => {
+const handleConversationEnd = (user) => {
   // we're in the closing state, send an email
   console.log('closing state!')
-  const summary = bot.getSummary(user)
-  const emailText = utils.getMessageBody(summary)
+  console.log(user.chatHistory)
+  // const summary = bot.getSummary(user)
+  // const emailText = utils.getMessageBody(summary)
   const emailSubject = utils.getSubject(user)
   const emailTo = utils.getEmailTo(user)
 
-  email.sendMail(emailText, emailSubject, emailTo)
+  email.sendMail('Heyo', emailSubject, emailTo)
 }
 
 /**
@@ -115,9 +118,9 @@ const sendBotMessage = (pageId, senderId, message) => {
 }
 
 
-const checkEnd = (pageId, user) => {
-  if (bot.isConversationEnd(user)) {
-    handleConversationEnd(pageId, user)
+const checkEnd = (user) => {
+  if (!flow.getUser(user.userId).currentState) {
+    handleConversationEnd(user)
   }
 
   return Promise.resolve()
@@ -129,11 +132,10 @@ const checkEnd = (pageId, user) => {
  * @param  {User} user - the user object
  * @param  {Text} userResponse - what the user responded with
  */
-const messageChain = (pageId, user, userResponse) => {
-  const nextMessages = bot.nextMessages(user, userResponse)
+const messageChain = (pageId, senderId, messages) => {
   let promiseChain = Promise.resolve()
-  nextMessages.forEach((message) => {
-    promiseChain = promiseChain.then(() => sendBotMessage(pageId, user.userId, message))
+  messages.forEach((message) => {
+    promiseChain = promiseChain.then(() => sendBotMessage(pageId, senderId, message))
   })
 
   return promiseChain
@@ -143,9 +145,9 @@ const messageChain = (pageId, user, userResponse) => {
  * handles the response to the question
  * @param  {Text} pageId - the id of the page that was messaged
  * @param  {Text} senderId - the id of the user who responded
- * @param  {Text} userResponse - what the user responded with
+ * @param  {Ojbect} messageData - and object with user message information
  */
-const processUserMessage = (pageId, senderId, userMessage) => {
+const processUserMessage = (pageId, senderId, messageData) => {
   if (users[senderId]) {
     console.log('current state')
     console.log(users[senderId].currentState)
@@ -153,36 +155,25 @@ const processUserMessage = (pageId, senderId, userMessage) => {
   const accessToken = configuration.PAGE_ACCESS_TOKENS[pageId]
   let userPromise
 
-  // check to see if we have a Get Started message for this user
-  if (bot.isConversationStart(userMessage)) {
-    userPromise = getUserInfo(pageId, accessToken, senderId)
-      .then((userInfo) => {
-        const user = new User()
-        user.userId = senderId
-        user.profile = userInfo
-        user.currentState = bot.getInitialState()
-        user.responses = {}
+  if (!users[senderId]) {
+    userPromise = getUserInfo(pageId, accessToken, senderId).then((userInfo) => {
+      const user = new User()
+      user.userId = senderId
+      user.profile = userInfo
 
-        users[senderId] = user
+      users[senderId] = user
 
-        return user
-      })
-  } else if (users[senderId] && users[senderId].currentState) {
-    // this is an ongoing conversation, we do not need to initialize anything
+      return user
+    })
+  } else {
     userPromise = Promise.resolve(users[senderId])
   }
 
-  if (userPromise) {
-    const processPromise = userPromise.then(user => bot.processResponse(user, userMessage))
-    const conversationPromise = Promise.all([userPromise, processPromise])
-      .then(values => messageChain(pageId, values[0], userMessage))
-    const endPromise = Promise.all([userPromise, conversationPromise])
-      .then(values => checkEnd(pageId, values[0]))
-    return endPromise
-  }
-
-  // this is not a message for the bot
-  return Promise.resolve()
+  return userPromise
+    .then(user => flow.getMessages(user.userId, messageData))
+    .then(messages => messageChain(pageId, senderId, messages))
+    .then(() => userPromise)
+    .then(user => checkEnd(user))
 }
 
 /**
@@ -195,12 +186,11 @@ const receivedPostback = (pageId, event) => {
   const senderId = event.sender.id;
   console.log('senderId')
   console.log(senderId)
-  console.log('postback')
-  console.log(event.postback)
+  const messageData = {}
+  messageData.payload = event.postback.payload
+  messageData.ref = event.postback.referral && event.postback.referral.ref
 
-  const messageText = event.postback.payload
-
-  return processUserMessage(pageId, senderId, messageText)
+  return processUserMessage(pageId, senderId, messageData)
 }
 
 /*
@@ -212,17 +202,35 @@ const receivedMessage = (pageId, event) => {
   console.log('senderId')
   console.log(senderId)
   const message = event.message
-  let messageText
+  const messageData = {}
 
   if (message.quick_reply) {
     // store the payload from the quick reply
-    messageText = message.quick_reply.payload
+    messageData.payload = message.quick_reply.payload
   } else {
     // store information from the text field
-    messageText = message.text
+    messageData.text = message.text
   }
 
-  return processUserMessage(pageId, senderId, messageText)
+  return processUserMessage(pageId, senderId, messageData)
+}
+
+/**
+ * receives a referal event from the facebook messenger
+ * @param  {string} pageId - the pageId that this request came from
+ * @param  {Object} event - the event object
+ * @return {Promise} - a promise for the response
+ */
+const receivedReferal = (pageId, event) => {
+  const senderId = event.sender.id
+  console.log('senderId')
+  console.log(senderId)
+  const referal = event.referral
+  const messageData = {}
+
+  messageData.ref = referal.ref
+
+  return processUserMessage(pageId, senderId, messageData)
 }
 
 const handleError = (err) => {
@@ -236,6 +244,7 @@ const handleError = (err) => {
  */
 app.post('/webhook', (req, res) => {
   const data = req.body
+  console.log('request received!')
 
   // Make sure this is a page subscription
   if (data.object === 'page') {
@@ -252,6 +261,8 @@ app.post('/webhook', (req, res) => {
           receivedMessage(pageId, messagingEvent).catch(err => handleError(err))
         } else if (messagingEvent.postback) {
           receivedPostback(pageId, messagingEvent).catch(err => handleError(err))
+        } else if (messagingEvent.referral) {
+          receivedReferal(pageId, messagingEvent).catch(err => handleError(err))
         } else {
           console.log('Webhook received unknown messagingEvent: ', messagingEvent)
         }
