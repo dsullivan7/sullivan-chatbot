@@ -83,7 +83,7 @@ app.get('/webhook', (req, res) => {
 const handleConversationEnd = (user) => {
   // we're in the closing state, send an email
   console.log('closing state!')
-  console.log(user.chatHistory)
+  console.log(flow.getUser(user.userId).chatHistory)
   // const summary = bot.getSummary(user)
   // const emailText = utils.getMessageBody(summary)
   const emailSubject = utils.getSubject(user)

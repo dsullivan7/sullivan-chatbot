@@ -13,14 +13,10 @@ const flow = {
     },
     [states.GREETING]: {
       next: () => states.QUICK_REPLY_DEMO,
-      message: (user) => {
-        console.log('user')
-        console.log(user)
-        return {
-          type: 'text',
-          text: `Hey there ${userStore[user.sessionId].profile.first_name}! Thanks for the message!`,
-        }
-      },
+      message: user => ({
+        type: 'text',
+        text: `Hey there ${userStore[user.sessionId].profile.first_name}! Thanks for the message!`,
+      }),
       noReply: true,
     },
     [states.QUICK_REPLY_DEMO]: {
