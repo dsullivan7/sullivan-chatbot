@@ -117,6 +117,11 @@ const sendBotMessage = (pageId, senderId, message) => {
 
 
 const checkEnd = (user) => {
+  const myUser = flow.getUser(user.userId).currentState
+  console.log('user')
+  console.log(user)
+  console.log('myUser')
+  console.log(myUser)
   if (!flow.getUser(user.userId).currentState) {
     handleConversationEnd(user)
   }
