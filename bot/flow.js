@@ -13,16 +13,9 @@ const flow = {
     },
     [states.GREETING]: {
       next: () => states.QUICK_REPLY_DEMO,
-      message: user => {
+      message: (user) => {
         console.log('user')
         console.log(user)
-        console.log('')
-        console.log('')
-        console.log('')
-        console.log('')
-        console.log('')
-        console.log('userStore')
-        console.log(userStore)
         return {
           type: 'text',
           text: `Hey there ${userStore[user.sessionId].profile.first_name}! Thanks for the message!`,
