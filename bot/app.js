@@ -84,12 +84,15 @@ const handleConversationEnd = (user) => {
   // we're in the closing state, send an email
   console.log('closing state!')
   console.log(flow.getUser(user.userId).chatHistory)
-  // const summary = bot.getSummary(user)
+  let emailText = ''
+  flow.getUser(user.userId).chatHistory.forEach((chatObject) => {
+    emailText += `${chatObject.data.text}\n`
+  })
   // const emailText = utils.getMessageBody(summary)
   const emailSubject = utils.getSubject(user)
   const emailTo = utils.getEmailTo(user)
 
-  email.sendMail('Heyo', emailSubject, emailTo)
+  email.sendMail(emailText, emailSubject, emailTo)
 }
 
 /**
