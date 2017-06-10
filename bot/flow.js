@@ -44,11 +44,12 @@ const flow = {
       }),
     },
     [states.OFF_SCRIPT]: {
-      next: () => null,
       message: () => ({
         type: 'text',
         text: 'No problem, we\'ll have someone reach out to you shortly',
       }),
+      noReply: true,
+      next: () => null,
     },
     [states.QUESTION]: {
       next: () => states.CLOSING,
