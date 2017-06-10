@@ -1,7 +1,7 @@
 import * as states from './states'
 import userStore from './userStore'
 
-const offscript = user => (user.responses[user.currentState].payload &&
+const offscript = user => (!user.responses[user.currentState].payload ||
                            !user.responses[user.currentState].payload.startsWith(user.currentState))
 
 // flow object represents the flow through a conversation
