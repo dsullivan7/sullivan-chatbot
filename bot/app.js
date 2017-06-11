@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser'
 import crypto from 'crypto'
 import express from 'express'
-import {Flow} from 'chatbot-flow'
+import { Flow } from 'chatbot-flow'
 
 import * as configuration from './configuration'
 import * as utils from './utils'
