@@ -15,7 +15,7 @@ const flow = {
       next: () => states.QUICK_REPLY_DEMO,
       message: user => ({
         type: 'text',
-        text: `Hey there ${userStore[user.sessionId].profile.first_name}! Thanks for the message!`,
+        text: `Hey there ${userStore[user.userId].profile.first_name}! Thanks for the message!`,
       }),
       noReply: true,
     },
