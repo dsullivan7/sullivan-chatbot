@@ -7,11 +7,8 @@ const offscript = user => (!user.responses[user.currentState].payload ||
 // flow object represents the flow through a conversation
 const flow = {
   states: {
-    [states.GET_STARTED]: {
-      match: (user, messageData) => (messageData.payload === 'GET_STARTED' || messageData.text === 'Get Started'),
-      next: states.GREETING,
-    },
     [states.GREETING]: {
+      match: (user, messageData) => (messageData.payload === 'GET_STARTED' || messageData.text === 'Get Started'),
       next: states.QUICK_REPLY_DEMO,
       message: user => ({
         type: 'text',
